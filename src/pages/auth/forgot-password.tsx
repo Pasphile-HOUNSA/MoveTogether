@@ -6,8 +6,6 @@ import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { login } from '@/routes';
-import { email } from '@/routes/password';
 
 export default function ForgotPassword({ status }: { status?: string }) {
     return (
@@ -21,7 +19,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
             )}
 
             <div className=" space-y-6">
-                <Form {...email.form()}>
+                <Form action="/forgot-password" method="post">
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
@@ -56,7 +54,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
                 <div className="space-x-1 text-center text-sm text-muted-foreground">
                     <span>Ou,</span>
-                    <TextLink href={login()} className='text-[#1D63ED] hover:underline'>Connectez-vous</TextLink>
+                    <TextLink href="/login" className='text-[#1D63ED] hover:underline'>Connectez-vous</TextLink>
                 </div>
             </div>
         </div>
