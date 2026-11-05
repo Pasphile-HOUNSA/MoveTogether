@@ -7,6 +7,8 @@ import ForgotPasswordPage from './pages/auth/forgot-password';
 import ResetPasswordPage from './pages/auth/reset-password';
 import ConfirmPasswordPage from './pages/auth/confirm-password';
 import VerifyEmailPage from './pages/auth/verify-email';
+import VerifyMagicLinkPage from './pages/auth/verify-magic-link';
+import OnboardingPage from './pages/auth/onboarding';
 import TwoFactorChallengePage from './pages/auth/two-factor-challenge';
 import CarCreatePage from './pages/car/create';
 import RideCreatePage from './pages/rides/create';
@@ -37,7 +39,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/login" element={<LoginPage status="" canResetPassword />} />
+        <Route path="/login" element={<LoginPage status="" />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage status="" />} />
         <Route
@@ -46,13 +48,16 @@ function App() {
         />
         <Route path="/confirm-password" element={<ConfirmPasswordPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage status="" />} />
+        <Route path="/auth/verify" element={<VerifyMagicLinkPage />} />
+        <Route path="/verify-magic-link" element={<VerifyMagicLinkPage />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/two-factor-challenge" element={<TwoFactorChallengePage />} />
         <Route path="/cars/create" element={<CarCreatePage />} />
         <Route path="/rides/create" element={<RideCreatePage />} />
         <Route path="/rides/search" element={<RideSearchPage />} />
         <Route
           path="/rides/verify-before-publish"
-          element={<VerifyBeforePublishPage documentComplete={false} document={null} carComplete={false} car={null} />}
+          element={<VerifyBeforePublishPage />}
         />
         <Route
           path="/settings/profile"

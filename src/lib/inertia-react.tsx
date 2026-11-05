@@ -71,22 +71,18 @@ export const router: any = {
   post: (url: string, _data?: Record<string, unknown>, options: RouteOptions = {}) => {
     options.onSuccess?.({ data: _data ?? {} });
     navigate(url, options);
-    options.onError?.({});
   },
   put: (url: string, _data?: Record<string, unknown>, options: RouteOptions = {}) => {
     options.onSuccess?.({ data: _data ?? {} });
     navigate(url, options);
-    options.onError?.({});
   },
   patch: (url: string, _data?: Record<string, unknown>, options: RouteOptions = {}) => {
     options.onSuccess?.({ data: _data ?? {} });
     navigate(url, options);
-    options.onError?.({});
   },
   delete: (url: string, _data?: Record<string, unknown>, options: RouteOptions = {}) => {
     options.onSuccess?.({ data: _data ?? {} });
     navigate(url, options);
-    options.onError?.({});
   },
   visit: (url: string, options: RouteOptions = {}) => navigate(url, options),
   reload: (options: RouteOptions = {}) => navigate(window.location.pathname + window.location.search, options),
