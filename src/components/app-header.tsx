@@ -23,6 +23,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { UserMenuContent } from '@/components/user-menu-content';
+import { resolveAuthenticatedFileUrl } from '@/lib/secure-file';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useInitials } from '@/hooks/use-initials';
 import { cn, toUrl } from '@/lib/utils';
@@ -70,14 +71,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
 
     const getAvatarUrl = (path?: string) => {
         if (!path) return undefined;
-        if (
-            path.startsWith('http://') ||
-            path.startsWith('https://') ||
-            path.startsWith('data:')
-        ) {
-            return path;
-        }
-        return path.startsWith('/') ? path : undefined;
+        return resolveAuthenticatedFileUrl(path) || path;
     };
 
     const avatarSrc = userPhoto

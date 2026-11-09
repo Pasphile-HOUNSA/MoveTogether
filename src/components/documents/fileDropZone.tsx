@@ -1,5 +1,6 @@
 import React from 'react';
 import { Upload, X, FileText } from 'lucide-react';
+import { resolveAuthenticatedFileUrl } from '@/lib/secure-file';
 
 interface FileDropZoneProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -37,7 +38,7 @@ export default function FileDropZone({
             </div>
           ) : (
             <img
-              src={preview}
+              src={resolveAuthenticatedFileUrl(preview) || preview}
               alt="Aperçu"
               className="h-40 w-auto object-cover rounded-xl shadow-sm border border-slate-200 dark:border-slate-600"
             />

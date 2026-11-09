@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Head } from '@inertiajs/react';
-import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Car, ChevronRight, Lock } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { AlertCircle, Car, ChevronRight, Lock, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,11 +14,21 @@ import {
     updateUserProfile,
 } from '@/lib/auth-service';
 
-// Champs requis par le backend pour un profil complet
-const REQUIRED_FIELDS = ['firstname', 'lastname', 'sex', 'birthday', 'phonenumber'];
+// Champs obligatoires de la table users pour un profil complet
+const REQUIRED_FIELDS = [
+    { key: 'firstname', label: 'Prénom' },
+    { key: 'lastname', label: 'Nom' },
+    { key: 'sex', label: 'Sexe' },
+    { key: 'birthday', label: 'Date de naissance' },
+    { key: 'phonenumber', label: 'Téléphone' },
+    { key: 'address', label: 'Adresse de résidence' },
+    { key: 'numpiece', label: 'N° de pièce d\'identité (CIP/CNI)' },
+];
 
 export default function OnboardingPage() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const isRedirectedFromAction = location.state?.reason === 'profile_incomplete';
 
     const [step, setStep] = useState<1 | 2>(1);
 
@@ -74,6 +84,8 @@ export default function OnboardingPage() {
 
     const validateStep2 = (): string | null => {
         if (!phoneNumber.trim()) return 'Veuillez renseigner votre numéro de téléphone.';
+        if (!address.trim()) return 'Veuillez renseigner votre adresse de résidence (ville/quartier).';
+        if (!numpiece.trim()) return 'Veuillez renseigner votre numéro de pièce d\'identité (CIP ou CNI).';
         return null;
     };
 
@@ -111,13 +123,15 @@ export default function OnboardingPage() {
             });
 
             if (res.success) {
-                navigate('/dashboard', { replace: true });
+                const destination = location.state?.from?.pathname || '/dashboard';
+                navigate(destination, { replace: true });
             } else {
                 setError(res.error || 'Erreur lors de la configuration du compte.');
             }
         } catch {
             // En cas d'erreur réseau, on redirige quand même (les données locales ont été sauvegardées)
-            navigate('/dashboard', { replace: true });
+            const destination = location.state?.from?.pathname || '/dashboard';
+            navigate(destination, { replace: true });
         } finally {
             setLoading(false);
         }
@@ -144,9 +158,9 @@ export default function OnboardingPage() {
                     </p>
                     <div className="mt-6 space-y-2">
                         {REQUIRED_FIELDS.map((f) => (
-                            <div key={f} className="flex items-center gap-2 text-white/70 text-sm">
+                            <div key={f.key} className="flex items-center gap-2 text-white/70 text-sm">
                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-300" />
-                                <span className="capitalize">{f === 'phonenumber' ? 'Téléphone' : f === 'birthday' ? 'Date de naissance' : f}</span>
+                                <span>{f.label}</span>
                             </div>
                         ))}
                     </div>
@@ -190,6 +204,16 @@ export default function OnboardingPage() {
                             Coordonnées
                         </div>
                     </div>
+
+                    {isRedirectedFromAction && (
+                        <div className="mb-5 flex items-start gap-3 bg-blue-50 border border-blue-200 text-blue-900 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-200 p-4 rounded-xl text-xs sm:text-sm">
+                            <ShieldAlert className="w-5 h-5 text-[#1D63ED] shrink-0 mt-0.5" />
+                            <div>
+                                <span className="font-bold">Informations requises : </span>
+                                Pour sécuriser la communauté et accéder à votre espace, vous devez renseigner les informations obligatoires de votre compte.
+                            </div>
+                        </div>
+                    )}
 
                     {error && (
                         <Alert variant="destructive" className="mb-5 bg-red-50 border-red-200 text-red-700 dark:bg-red-950/40 dark:border-red-900 dark:text-red-200">

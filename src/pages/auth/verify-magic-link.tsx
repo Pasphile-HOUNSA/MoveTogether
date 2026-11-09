@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Head } from '@inertiajs/react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, ArrowRight, Car, CheckCircle } from 'lucide-react';
@@ -14,6 +14,7 @@ export default function VerifyMagicLinkPage() {
     const [state, setState] = useState<VerificationState>('loading');
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [redirectTarget, setRedirectTarget] = useState<'/dashboard' | '/onboarding'>('/dashboard');
+    const hasAttempted = useRef<boolean>(false);
 
     useEffect(() => {
         const token = searchParams.get('token');
@@ -24,12 +25,14 @@ export default function VerifyMagicLinkPage() {
             return;
         }
 
-        let isMounted = true;
+        // Évite le double déclenchement en mode développement (React StrictMode)
+        if (hasAttempted.current) {
+            return;
+        }
+        hasAttempted.current = true;
 
         verifyMagicLink(token)
             .then((result) => {
-                if (!isMounted) return;
-
                 if (result.success) {
                     setState('success');
                     const complete = isProfileComplete(result.user || null);
@@ -45,14 +48,9 @@ export default function VerifyMagicLinkPage() {
                 }
             })
             .catch(() => {
-                if (!isMounted) return;
                 setState('error');
                 setErrorMessage('Une erreur réseau est survenue lors de la validation.');
             });
-
-        return () => {
-            isMounted = false;
-        };
     }, [searchParams, navigate]);
 
     return (

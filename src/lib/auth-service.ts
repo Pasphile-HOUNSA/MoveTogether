@@ -15,6 +15,9 @@ export interface DriverReadiness {
     carComplete: boolean;
     missingDocFields: string[];
     missingCarFields: string[];
+    documentStatus?: string;
+    documentRejectionReason?: string | null;
+    isExpired?: boolean;
 }
 
 export interface AuthUser {
@@ -29,6 +32,8 @@ export interface AuthUser {
     sex?: 'Homme' | 'Femme' | 'Autre' | string;
     birthday?: string;
     numpiece?: string;
+    scanpiece?: string;
+    photoIdentite?: string;
     profileComplete?: boolean;
     missingFields?: string[];
     driverReady?: DriverReadiness;
@@ -45,8 +50,8 @@ export interface ApiResponse<T = any> {
 }
 
 /**
- * Vérifie localement si le profil utilisateur est complet.
- * Utilisé comme fallback quand l'API n'est pas disponible.
+ * Vérifie localement si le profil utilisateur de la table 'users' est complet.
+ * Vérifie prénom, nom, sexe, date de naissance, téléphone, adresse et numéro de pièce.
  */
 export function isProfileComplete(user: AuthUser | null): boolean {
     if (!user) return false;
@@ -54,8 +59,12 @@ export function isProfileComplete(user: AuthUser | null): boolean {
     if (typeof user.profileComplete === 'boolean') return user.profileComplete;
     const hasFirstName = Boolean(user.firstname && user.firstname.trim().length > 0);
     const hasLastName = Boolean(user.lastname && user.lastname.trim().length > 0);
+    const hasSex = Boolean(user.sex && user.sex.trim().length > 0);
+    const hasBirthday = Boolean(user.birthday && user.birthday !== '2000-01-01');
     const hasPhone = Boolean(user.phonenumber && user.phonenumber.trim().length > 0);
-    return hasFirstName && hasLastName && hasPhone;
+    const hasAddress = Boolean(user.address && user.address.trim().length > 0);
+    const hasNumpiece = Boolean(user.numpiece && user.numpiece.trim().length > 0);
+    return hasFirstName && hasLastName && hasSex && hasBirthday && hasPhone && hasAddress && hasNumpiece;
 }
 
 /**
@@ -100,6 +109,8 @@ export async function fetchCurrentUser(): Promise<ApiResponse<AuthUser>> {
                 sex: data.user.sex || '',
                 birthday: data.user.birthday || '',
                 numpiece: data.user.numpiece || '',
+                scanpiece: data.user.scanpiece || '',
+                photoIdentite: data.user.photoIdentite || data.user.photoId || '',
                 profileComplete: data.user.profileComplete,
                 missingFields: data.user.missingFields || [],
                 driverReady: data.user.driverReady,
@@ -252,6 +263,8 @@ export async function verifyMagicLink(token: string): Promise<ApiResponse<AuthUs
                 sex: data.user?.sex || '',
                 birthday: data.user?.birthday || '',
                 numpiece: data.user?.numpiece || '',
+                scanpiece: data.user?.scanpiece || '',
+                photoIdentite: data.user?.photoIdentite || data.user?.photoId || '',
                 profileComplete: data.user?.profileComplete,
                 missingFields: data.user?.missingFields || [],
                 driverReady: data.user?.driverReady,
@@ -371,6 +384,8 @@ export async function updateUserProfile(profileData: Partial<AuthUser>): Promise
     };
 }
 
+export const saveUserProfile = updateUserProfile;
+
 /**
  * Sauvegarde de la session locale
  */
@@ -409,6 +424,25 @@ export function clearAuth(): void {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+}
+
+/**
+ * Déconnexion avec révocation de session côté backend
+ */
+export async function logoutUser(): Promise<void> {
+    const token = getStoredToken();
+    if (token) {
+        try {
+            await fetch(`${API_BASE_URL}/auth/logout`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+        } catch {}
+    }
+    clearAuth();
 }
 
 /**

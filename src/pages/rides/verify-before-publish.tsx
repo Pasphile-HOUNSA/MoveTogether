@@ -168,11 +168,25 @@ export default function VerifyBeforePublish() {
                             )}
                         </div>
 
+                        {driverReady?.isExpired && (
+                            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 p-4 rounded-xl text-sm mb-4">
+                                <strong>⚠️ Permis de conduire expiré :</strong> Vous devez téléverser un permis en cours de validité avant de pouvoir publier un trajet.
+                            </div>
+                        )}
+
+                        {driverReady?.documentStatus === 'refuse' && (
+                            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 p-4 rounded-xl text-sm mb-4">
+                                <p className="font-bold">❌ Documents refusés par l'administration :</p>
+                                <p className="mt-1 italic">« {driverReady.documentRejectionReason || 'Dossier non conforme'} »</p>
+                                <p className="mt-1 text-xs">Veuillez mettre à jour vos pièces en cliquant ci-dessous.</p>
+                            </div>
+                        )}
+
                         {documentComplete ? (
                             <div className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 p-3 rounded-xl text-sm mb-4">
                                 ✓ Tous vos documents sont à jour et validés
                             </div>
-                        ) : (
+                        ) : !driverReady?.isExpired && driverReady?.documentStatus !== 'refuse' ? (
                             <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-4">
                                 <p className="text-amber-900 dark:text-amber-200 text-sm font-medium mb-3">
                                     Documents manquants ou incomplets :
@@ -191,11 +205,11 @@ export default function VerifyBeforePublish() {
                                     )}
                                 </ul>
                             </div>
-                        )}
+                        ) : null}
 
                         {!documentComplete && (
                             <Button
-                                onClick={() => navigate('/settings/documents')}
+                                onClick={() => navigate('/documents/create')}
                                 className="w-full bg-[#1D63ED] hover:bg-blue-700 text-white font-semibold"
                             >
                                 Compléter mes documents

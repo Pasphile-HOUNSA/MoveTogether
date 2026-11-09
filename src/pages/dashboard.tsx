@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Head, Link } from '@inertiajs/react';
 import {
-    LayoutDashboard,
     Car,
     Search,
     PlusCircle,
@@ -12,30 +11,27 @@ import {
     Wallet,
     MessageSquare,
     ShieldCheck,
-    User,
-    LogOut,
     Bell,
     CheckCircle2,
     Menu,
-    X,
-    ExternalLink,
     TrendingUp,
-    History,
     ChevronRight,
     Phone,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import AppLogoIcon from '@/components/app-logo-icon';
 import {
     getStoredUser,
     isAuthenticated,
     isProfileComplete,
-    clearAuth,
+    fetchCurrentUser,
     type AuthUser,
 } from '@/lib/auth-service';
+import Sidebar from '@/components/layout/Sidebar';
+import { resolveAuthenticatedFileUrl } from '@/lib/secure-file';
 
-// --- Interfaces & Types ---
+// ─── Interfaces & Types ───────────────────────────────────────────────────────
+
 export interface DashboardRide {
     id: number;
     depart: string;
@@ -60,7 +56,8 @@ export interface ActivityItem {
     montant?: number;
 }
 
-// --- Données de démonstration professionnelles ---
+// ─── Données de démonstration ─────────────────────────────────────────────────
+
 const DEFAULT_RIDES: DashboardRide[] = [
     {
         id: 1,
@@ -131,6 +128,8 @@ const RECENT_ACTIVITIES: ActivityItem[] = [
     },
 ];
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function getGreeting(): string {
     const hour = new Date().getHours();
     if (hour < 12) return 'Bonjour';
@@ -146,6 +145,8 @@ function getInitials(name: string): string {
         .map((part) => part[0]?.toUpperCase())
         .join('');
 }
+
+// ─── Composant StatKpi ────────────────────────────────────────────────────────
 
 interface StatKpiProps {
     label: string;
@@ -183,6 +184,8 @@ function StatKpi({ label, value, subtext, icon: Icon, trend, tint }: StatKpiProp
     );
 }
 
+// ─── Page Dashboard ───────────────────────────────────────────────────────────
+
 export default function Dashboard() {
     const navigate = useNavigate();
     const [user, setUser] = useState<AuthUser | null>(null);
@@ -197,14 +200,20 @@ export default function Dashboard() {
             setUser(storedUser);
             if (isAuthenticated() && !isProfileComplete(storedUser)) {
                 navigate('/onboarding', { replace: true });
+                return;
             }
         }
+        if (isAuthenticated()) {
+            fetchCurrentUser().then((res) => {
+                if (res.success && res.user) {
+                    setUser(res.user);
+                    if (!isProfileComplete(res.user)) {
+                        navigate('/onboarding', { replace: true });
+                    }
+                }
+            });
+        }
     }, [navigate]);
-
-    const handleLogout = () => {
-        clearAuth();
-        navigate('/login', { replace: true });
-    };
 
     const displayName =
         [user?.firstname, user?.lastname].filter(Boolean).join(' ') ||
@@ -214,6 +223,10 @@ export default function Dashboard() {
 
     const firstName = user?.firstname || displayName.split(' ')[0] || 'Membre';
     const userRole = user?.role || 'Conducteur vérifié';
+
+    // Photo de profil : priorité photo uploadée > avatar OAuth > initiales
+    const rawAvatarUrl = user?.photoIdentite || (user as any)?.avatar_url || null;
+    const avatarUrl = resolveAuthenticatedFileUrl(rawAvatarUrl);
 
     const filteredRides = rides.filter((r) => {
         if (rideFilter === 'tous') return true;
@@ -225,208 +238,25 @@ export default function Dashboard() {
             <Head title="Tableau de bord - MoveTogether" />
 
             <div className="min-h-screen bg-[#EEF2F8] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex font-sans">
-                {/* 1. SIDEBAR DESKTOP & MOBILE */}
 
-                {/* Backdrop pour mobile */}
-                {sidebarOpen && (
-                    <div
-                        className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs lg:hidden"
-                        onClick={() => setSidebarOpen(false)}
-                    />
-                )}
+                {/* ── Sidebar réutilisable ── */}
+                <Sidebar
+                    isOpen={sidebarOpen}
+                    onClose={() => setSidebarOpen(false)}
+                    collapsed={sidebarCollapsed}
+                    onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    customUser={user}
+                />
 
-                <aside
-                    className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 transition-all duration-300 ${
-                        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-                    } ${sidebarCollapsed ? 'lg:w-20' : 'w-64 lg:w-72'}`}
-                >
-                    {/* Header de la Sidebar */}
-                    <div className="flex h-16 items-center justify-between px-5 border-b border-slate-200/80 dark:border-slate-800">
-                        <Link href="/" className="flex items-center gap-2.5">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1D63ED] text-white shadow-md shadow-blue-500/20">
-                                <AppLogoIcon className="h-5 w-5 fill-current text-white" />
-                            </div>
-                            {!sidebarCollapsed && (
-                                <div className="flex flex-col min-w-0">
-                                    <span className="text-lg font-black tracking-tight text-slate-900 dark:text-white leading-none">
-                                        Move<span className="text-[#1D63ED]">Together</span>
-                                    </span>
-                                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
-                                        Espace Gestion
-                                    </span>
-                                </div>
-                            )}
-                        </Link>
-
-                        {/* Bouton de fermeture mobile */}
-                        <button
-                            type="button"
-                            onClick={() => setSidebarOpen(false)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 lg:hidden"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                    </div>
-
-                    {/* Navigation Principale de la Sidebar */}
-                    <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6">
-                        {/* Section Menu Principal */}
-                        <div>
-                            {!sidebarCollapsed && (
-                                <p className="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                                    Menu Principal
-                                </p>
-                            )}
-                            <nav className="space-y-1">
-                                <Link
-                                    href="/dashboard"
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm bg-[#1D63ED] text-white shadow-sm shadow-blue-500/20"
-                                >
-                                    <LayoutDashboard className="w-5 h-5 shrink-0" />
-                                    {!sidebarCollapsed && <span>Tableau de bord</span>}
-                                </Link>
-
-                                <Link
-                                    href="/rides/search"
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-300 hover:text-[#1D63ED] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                >
-                                    <Search className="w-5 h-5 shrink-0 text-slate-400" />
-                                    {!sidebarCollapsed && <span>Rechercher un trajet</span>}
-                                </Link>
-
-                                <Link
-                                    href="/rides/verify-before-publish"
-                                    className="flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-300 hover:text-[#1D63ED] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <PlusCircle className="w-5 h-5 shrink-0 text-[#1D63ED]" />
-                                        {!sidebarCollapsed && <span>Publier un trajet</span>}
-                                    </div>
-                                    {!sidebarCollapsed && (
-                                        <span className="bg-blue-50 dark:bg-blue-950 text-[#1D63ED] text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                            Nouveau
-                                        </span>
-                                    )}
-                                </Link>
-
-                                <Link
-                                    href="/cars/create"
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-300 hover:text-[#1D63ED] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                >
-                                    <Car className="w-5 h-5 shrink-0 text-slate-400" />
-                                    {!sidebarCollapsed && <span>Mes véhicules</span>}
-                                </Link>
-                            </nav>
-                        </div>
-
-                        {/* Section Activité & Services */}
-                        <div>
-                            {!sidebarCollapsed && (
-                                <p className="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                                    Services & Gains
-                                </p>
-                            )}
-                            <nav className="space-y-1">
-                                <a
-                                    href="#portefeuille"
-                                    className="flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-300 hover:text-[#1D63ED] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Wallet className="w-5 h-5 shrink-0 text-emerald-600" />
-                                        {!sidebarCollapsed && <span>Portefeuille</span>}
-                                    </div>
-                                    {!sidebarCollapsed && (
-                                        <span className="text-xs font-bold text-emerald-600">
-                                            45 000 F
-                                        </span>
-                                    )}
-                                </a>
-
-                                <a
-                                    href="#activite"
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-300 hover:text-[#1D63ED] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                >
-                                    <History className="w-5 h-5 shrink-0 text-slate-400" />
-                                    {!sidebarCollapsed && <span>Historique des courses</span>}
-                                </a>
-                            </nav>
-                        </div>
-
-                        {/* Section Paramètres & Sécurité */}
-                        <div>
-                            {!sidebarCollapsed && (
-                                <p className="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                                    Compte & Sécurité
-                                </p>
-                            )}
-                            <nav className="space-y-1">
-                                <Link
-                                    href="/settings/profile"
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-300 hover:text-[#1D63ED] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                >
-                                    <User className="w-5 h-5 shrink-0 text-slate-400" />
-                                    {!sidebarCollapsed && <span>Mon profil</span>}
-                                </Link>
-
-                                <Link
-                                    href="/settings/security"
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-300 hover:text-[#1D63ED] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                >
-                                    <ShieldCheck className="w-5 h-5 shrink-0 text-slate-400" />
-                                    {!sidebarCollapsed && <span>Sécurité & Sessions</span>}
-                                </Link>
-
-                                <Link
-                                    href="/"
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 dark:text-slate-300 hover:text-[#1D63ED] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                                >
-                                    <ExternalLink className="w-5 h-5 shrink-0 text-slate-400" />
-                                    {!sidebarCollapsed && <span>Retour au site public</span>}
-                                </Link>
-                            </nav>
-                        </div>
-                    </div>
-
-                    {/* Footer de la Sidebar : Profil utilisateur & Déconnexion */}
-                    <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70">
-                        <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3 min-w-0">
-                                <div className="h-10 w-10 shrink-0 rounded-xl bg-[#1D63ED] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                                    {getInitials(displayName)}
-                                </div>
-                                {!sidebarCollapsed && (
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                            {displayName}
-                                        </p>
-                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                                            {user?.email || 'compte@movetogether.bj'}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={handleLogout}
-                                title="Se déconnecter"
-                                className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-                            >
-                                <LogOut className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-                </aside>
-
-                {/* 2. ZONE PRINCIPALE DU DASHBOARD */}
+                {/* ── Zone principale ── */}
                 <div
                     className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
                         sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'
                     }`}
                 >
-                    {/* Header Supérieur du Dashboard */}
+                    {/* ── Header supérieur ── */}
                     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-900/90">
-                        {/* Gauche : Toggle Sidebar & Fil d'ariane */}
+                        {/* Gauche : toggle + fil d'ariane */}
                         <div className="flex items-center gap-3">
                             <button
                                 type="button"
@@ -453,7 +283,7 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        {/* Droite : Notifications & Action rapide */}
+                        {/* Droite : actions + avatar */}
                         <div className="flex items-center gap-3">
                             <Link href="/rides/verify-before-publish">
                                 <Button className="h-9 px-4 bg-[#1D63ED] hover:bg-[#1552C6] text-white font-semibold text-xs rounded-xl shadow-sm gap-2">
@@ -473,26 +303,36 @@ export default function Dashboard() {
                                 </button>
                             </div>
 
+                            {/* Avatar utilisateur dans le header — affiche la photo si dispo */}
                             <Link href="/settings/profile">
-                                <div className="h-9 w-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-[#1D63ED] flex items-center justify-center font-bold text-xs border border-slate-200 dark:border-slate-700 hover:border-[#1D63ED] transition-colors">
-                                    {getInitials(displayName)}
+                                <div className="h-9 w-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-[#1D63ED] flex items-center justify-center font-bold text-xs border border-slate-200 dark:border-slate-700 hover:border-[#1D63ED] transition-colors overflow-hidden">
+                                    {avatarUrl ? (
+                                        <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                                    ) : (
+                                        getInitials(displayName)
+                                    )}
                                 </div>
                             </Link>
                         </div>
                     </header>
 
-                    {/* Corps de Page du Dashboard */}
+                    {/* ── Corps de la page ── */}
                     <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
-                        {/* 1. BANDEAU DE BIENVENUE PREMIUM */}
+
+                        {/* 1. Bandeau de bienvenue */}
                         <div className="relative overflow-hidden bg-gradient-to-br from-[#1D63ED] via-[#1A56CC] to-[#0D3B99] rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-blue-900/10">
-                            {/* Cercles décoratifs */}
                             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white/10 blur-2xl pointer-events-none" />
                             <div className="absolute bottom-0 right-1/3 -mb-20 w-80 h-80 rounded-full bg-blue-400/10 blur-3xl pointer-events-none" />
 
                             <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                                 <div className="flex items-center gap-4 sm:gap-5">
-                                    <div className="h-16 w-16 shrink-0 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center font-black text-xl shadow-inner">
-                                        {getInitials(displayName)}
+                                    {/* Avatar dans le bandeau — photo ou initiales */}
+                                    <div className="h-16 w-16 shrink-0 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 overflow-hidden flex items-center justify-center font-black text-xl shadow-inner">
+                                        {avatarUrl ? (
+                                            <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                                        ) : (
+                                            getInitials(displayName)
+                                        )}
                                     </div>
                                     <div>
                                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-semibold text-blue-100 mb-2 border border-white/20">
@@ -525,7 +365,7 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        {/* 2. STATISTIQUES CLÉS & KPI */}
+                        {/* 2. Statistiques KPI */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                             <StatKpi
                                 label="Trajets actifs"
@@ -559,11 +399,11 @@ export default function Dashboard() {
                             />
                         </div>
 
-                        {/* 3. GRILLE PRINCIPALE (CONTENU & WIDGETS LATÉRAUX) */}
+                        {/* 3. Grille principale */}
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                            {/* Colonne Gauche : Prochains Trajets & Activité (8 cols) */}
+                            {/* Colonne gauche : trajets + activité */}
                             <div className="lg:col-span-8 space-y-6">
-                                {/* Section : Prochains trajets */}
+                                {/* Prochains trajets */}
                                 <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-5">
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                         <div>
@@ -575,45 +415,24 @@ export default function Dashboard() {
                                             </p>
                                         </div>
 
-                                        {/* Filtres de trajets */}
                                         <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700 self-start sm:self-auto">
-                                            <button
-                                                type="button"
-                                                onClick={() => setRideFilter('tous')}
-                                                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
-                                                    rideFilter === 'tous'
-                                                        ? 'bg-white dark:bg-slate-900 text-[#1D63ED] shadow-xs'
-                                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                                                }`}
-                                            >
-                                                Tous ({rides.length})
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setRideFilter('conducteur')}
-                                                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
-                                                    rideFilter === 'conducteur'
-                                                        ? 'bg-white dark:bg-slate-900 text-[#1D63ED] shadow-xs'
-                                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                                                }`}
-                                            >
-                                                Conducteur (2)
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setRideFilter('passager')}
-                                                className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
-                                                    rideFilter === 'passager'
-                                                        ? 'bg-white dark:bg-slate-900 text-[#1D63ED] shadow-xs'
-                                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                                                }`}
-                                            >
-                                                Passager (1)
-                                            </button>
+                                            {(['tous', 'conducteur', 'passager'] as const).map((f) => (
+                                                <button
+                                                    key={f}
+                                                    type="button"
+                                                    onClick={() => setRideFilter(f)}
+                                                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-colors ${
+                                                        rideFilter === f
+                                                            ? 'bg-white dark:bg-slate-900 text-[#1D63ED] shadow-xs'
+                                                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                                                    }`}
+                                                >
+                                                    {f === 'tous' ? `Tous (${rides.length})` : f === 'conducteur' ? 'Conducteur (2)' : 'Passager (1)'}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
 
-                                    {/* Liste des cartes de trajets */}
                                     <div className="space-y-4">
                                         {filteredRides.map((ride) => (
                                             <div
@@ -647,7 +466,6 @@ export default function Dashboard() {
                                                     </div>
                                                 </div>
 
-                                                {/* Visualisation départ / arrivée */}
                                                 <div className="flex items-start gap-3">
                                                     <div className="flex flex-col items-center mt-1">
                                                         <span className="h-2.5 w-2.5 rounded-full bg-[#1D63ED]" />
@@ -655,16 +473,11 @@ export default function Dashboard() {
                                                         <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
                                                     </div>
                                                     <div className="flex-1 space-y-1 text-sm">
-                                                        <div className="font-bold text-slate-900 dark:text-white">
-                                                            {ride.depart}
-                                                        </div>
-                                                        <div className="font-bold text-slate-900 dark:text-white">
-                                                            {ride.arrivee}
-                                                        </div>
+                                                        <div className="font-bold text-slate-900 dark:text-white">{ride.depart}</div>
+                                                        <div className="font-bold text-slate-900 dark:text-white">{ride.arrivee}</div>
                                                     </div>
                                                 </div>
 
-                                                {/* Détails complémentaires & actions */}
                                                 <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
                                                     <div>
                                                         {ride.role === 'conducteur' && ride.passagers ? (
@@ -701,7 +514,7 @@ export default function Dashboard() {
                                     </div>
                                 </div>
 
-                                {/* Section : Dernières activités & Historique */}
+                                {/* Activité récente */}
                                 <div id="activite" className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
                                     <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
                                         Activité récente
@@ -729,12 +542,8 @@ export default function Dashboard() {
                                                         )}
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-bold text-slate-900 dark:text-white">
-                                                            {act.titre}
-                                                        </p>
-                                                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                                                            {act.description}
-                                                        </p>
+                                                        <p className="text-sm font-bold text-slate-900 dark:text-white">{act.titre}</p>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400">{act.description}</p>
                                                     </div>
                                                 </div>
 
@@ -752,18 +561,16 @@ export default function Dashboard() {
                                 </div>
                             </div>
 
-                            {/* Colonne Droite : Widgets Portefeuille, Véhicule & Sécurité (4 cols) */}
+                            {/* Colonne droite : widgets */}
                             <div className="lg:col-span-4 space-y-6">
-                                {/* Widget Portefeuille & Solde */}
+                                {/* Portefeuille */}
                                 <div id="portefeuille" className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950">
                                                 <Wallet className="w-5 h-5" />
                                             </div>
-                                            <span className="text-sm font-bold text-slate-900 dark:text-white">
-                                                Mon Portefeuille
-                                            </span>
+                                            <span className="text-sm font-bold text-slate-900 dark:text-white">Mon Portefeuille</span>
                                         </div>
                                         <span className="text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full">
                                             Actif
@@ -788,32 +595,24 @@ export default function Dashboard() {
                                     </p>
                                 </div>
 
-                                {/* Widget Véhicule Enregistré */}
+                                {/* Véhicule */}
                                 <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <div className="p-2 rounded-xl bg-blue-50 text-[#1D63ED] dark:bg-blue-950">
                                                 <Car className="w-5 h-5" />
                                             </div>
-                                            <span className="text-sm font-bold text-slate-900 dark:text-white">
-                                                Véhicule actif
-                                            </span>
+                                            <span className="text-sm font-bold text-slate-900 dark:text-white">Véhicule actif</span>
                                         </div>
                                         <Link href="/cars/create">
-                                            <span className="text-xs font-semibold text-[#1D63ED] hover:underline">
-                                                Modifier
-                                            </span>
+                                            <span className="text-xs font-semibold text-[#1D63ED] hover:underline">Modifier</span>
                                         </Link>
                                     </div>
 
                                     <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700 space-y-2">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm font-extrabold text-slate-900 dark:text-white">
-                                                Toyota Corolla
-                                            </span>
-                                            <span className="text-[10px] font-bold bg-blue-100 text-[#1D63ED] px-2 py-0.5 rounded-full">
-                                                4 places
-                                            </span>
+                                            <span className="text-sm font-extrabold text-slate-900 dark:text-white">Toyota Corolla</span>
+                                            <span className="text-[10px] font-bold bg-blue-100 text-[#1D63ED] px-2 py-0.5 rounded-full">4 places</span>
                                         </div>
                                         <div className="text-xs text-slate-500 dark:text-slate-400">
                                             Immatriculation : <span className="font-mono font-bold">AB 1234 RB</span>
@@ -825,46 +624,33 @@ export default function Dashboard() {
                                     </div>
                                 </div>
 
-                                {/* Widget Niveau de Confiance & Sécurité */}
+                                {/* Niveau de vérification */}
                                 <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950">
                                                 <ShieldCheck className="w-5 h-5" />
                                             </div>
-                                            <span className="text-sm font-bold text-slate-900 dark:text-white">
-                                                Niveau de vérification
-                                            </span>
+                                            <span className="text-sm font-bold text-slate-900 dark:text-white">Niveau de vérification</span>
                                         </div>
                                         <span className="text-xs font-extrabold text-emerald-600">100%</span>
                                     </div>
 
-                                    {/* Barre de progression */}
                                     <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
                                         <div className="bg-emerald-500 h-full rounded-full w-full" />
                                     </div>
 
                                     <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
-                                        <div className="flex items-center justify-between">
-                                            <span>Carte Nationale d'Identité</span>
-                                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span>Permis de conduire</span>
-                                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span>Numéro de téléphone vérifié</span>
-                                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span>Adresse e-mail confirmée</span>
-                                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                        </div>
+                                        {['Carte Nationale d\'Identité', 'Permis de conduire', 'Numéro de téléphone vérifié', 'Adresse e-mail confirmée'].map((item) => (
+                                            <div key={item} className="flex items-center justify-between">
+                                                <span>{item}</span>
+                                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
 
-                                {/* Widget Assistance Support */}
+                                {/* Support WhatsApp */}
                                 <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-6 space-y-4 shadow-sm">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2.5 rounded-xl bg-white/10 text-blue-400">
@@ -878,12 +664,7 @@ export default function Dashboard() {
                                     <p className="text-xs text-slate-300 leading-relaxed">
                                         Une question sur un trajet ou un passager ? Notre équipe support à Cotonou est joignable directement par WhatsApp.
                                     </p>
-                                    <a
-                                        href="https://wa.me/22900000000"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="block"
-                                    >
+                                    <a href="https://wa.me/22900000000" target="_blank" rel="noopener noreferrer" className="block">
                                         <Button className="w-full h-10 bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs rounded-xl gap-2">
                                             <MessageSquare className="w-4 h-4 text-emerald-600" />
                                             Contacter sur WhatsApp

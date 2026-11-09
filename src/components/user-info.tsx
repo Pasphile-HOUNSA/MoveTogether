@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
 import type { User } from '@/types';
+import { resolveAuthenticatedFileUrl } from '@/lib/secure-file';
 
 type AuthUser = User & {
     firstName?: string;
@@ -34,14 +35,7 @@ export function UserInfo({
 
     const getAvatarUrl = (path?: string | null) => {
         if (!path) return undefined;
-        if (
-            path.startsWith('http://') ||
-            path.startsWith('https://') ||
-            path.startsWith('data:')
-        ) {
-            return path;
-        }
-        return path.startsWith('/') ? path : `/storage/${path}`;
+        return resolveAuthenticatedFileUrl(path) || path;
     };
 
     const avatarSrc = userPhoto

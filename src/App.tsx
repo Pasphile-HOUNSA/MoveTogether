@@ -3,10 +3,6 @@ import HomePage from './pages/home';
 import DashboardPage from './pages/dashboard';
 import LoginPage from './pages/auth/login';
 import RegisterPage from './pages/auth/register';
-import ForgotPasswordPage from './pages/auth/forgot-password';
-import ResetPasswordPage from './pages/auth/reset-password';
-import ConfirmPasswordPage from './pages/auth/confirm-password';
-import VerifyEmailPage from './pages/auth/verify-email';
 import VerifyMagicLinkPage from './pages/auth/verify-magic-link';
 import OnboardingPage from './pages/auth/onboarding';
 import TwoFactorChallengePage from './pages/auth/two-factor-challenge';
@@ -18,6 +14,7 @@ import AppearancePage from './pages/settings/appearance';
 import SecurityPage from './pages/settings/security';
 import UploadProfilePage from './pages/upload/uploadProfile';
 import DocumentCreatePage from './pages/documents/create';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function RideSearchPage() {
   return (
@@ -36,49 +33,120 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Routes publiques */}
         <Route path="/" element={<HomePage />} />
         <Route path="/home" element={<HomePage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/login" element={<LoginPage status="" />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage status="" />} />
-        <Route
-          path="/reset-password"
-          element={<ResetPasswordPage token="demo-token" email="demo@example.com" />}
-        />
-        <Route path="/confirm-password" element={<ConfirmPasswordPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage status="" />} />
         <Route path="/auth/verify" element={<VerifyMagicLinkPage />} />
         <Route path="/verify-magic-link" element={<VerifyMagicLinkPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/two-factor-challenge" element={<TwoFactorChallengePage />} />
-        <Route path="/cars/create" element={<CarCreatePage />} />
-        <Route path="/rides/create" element={<RideCreatePage />} />
         <Route path="/rides/search" element={<RideSearchPage />} />
+
+        {/* Routes protégées : exigent connexion ET profil complet (table users) */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/two-factor-challenge"
+          element={
+            <ProtectedRoute>
+              <TwoFactorChallengePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cars/create"
+          element={
+            <ProtectedRoute>
+              <CarCreatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rides/create"
+          element={
+            <ProtectedRoute>
+              <RideCreatePage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/rides/verify-before-publish"
-          element={<VerifyBeforePublishPage />}
+          element={
+            <ProtectedRoute>
+              <VerifyBeforePublishPage />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/settings/profile"
-          element={<ProfilePage />}
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
         />
-        <Route path="/settings/appearance" element={<AppearancePage />} />
+        <Route
+          path="/settings/appearance"
+          element={
+            <ProtectedRoute>
+              <AppearancePage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/settings/security"
           element={
-            <SecurityPage
-              passwordRules=""
-              canManagePasskeys={false}
-              passkeys={[]}
-              canManageTwoFactor={false}
-              requiresConfirmation={false}
-              twoFactorEnabled={false}
-            />
+            <ProtectedRoute>
+              <SecurityPage
+                passwordRules=""
+                canManagePasskeys={false}
+                passkeys={[]}
+                canManageTwoFactor={false}
+                requiresConfirmation={false}
+                twoFactorEnabled={false}
+              />
+            </ProtectedRoute>
           }
         />
-        <Route path="/upload/profile" element={<UploadProfilePage />} />
-        <Route path="/documents/create" element={<DocumentCreatePage />} />
+        <Route
+          path="/upload/profile"
+          element={
+            <ProtectedRoute>
+              <UploadProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/upload-profile"
+          element={
+            <ProtectedRoute>
+              <UploadProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/documents/create"
+          element={
+            <ProtectedRoute>
+              <DocumentCreatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings/documents"
+          element={
+            <ProtectedRoute>
+              <DocumentCreatePage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -90,7 +90,50 @@ export const router: any = {
 };
 
 export function usePage<T = any>(): any {
-  return { props: {} as T };
+  let user: any = null;
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('movetogether_user') : null;
+    if (raw) {
+      user = JSON.parse(raw);
+    }
+  } catch {}
+
+  const normalizedUser = user
+    ? {
+        ...user,
+        idUser: user.iduser || user.idUser || 0,
+        firstName: user.firstname || user.firstName || '',
+        lastName: user.lastname || user.lastName || '',
+        phoneNumber: user.phonenumber || user.phoneNumber || '',
+        birthday: user.birthday || '',
+        sex: user.sex || 'Homme',
+        address: user.address || '',
+        numPiece: user.numpiece || user.numPiece || '',
+        scanPiece: user.scanpiece || user.scanPiece || null,
+        photoId: user.photoIdentite || user.photoId || user.avatar_url || null,
+        avatar_url: user.photoIdentite || user.photoId || user.avatar_url || null,
+        isActive: user.isActive !== undefined ? user.isActive : true,
+      }
+    : {
+        idUser: 0,
+        firstName: '',
+        lastName: '',
+        email: '',
+        phoneNumber: '',
+        birthday: '',
+        sex: 'Homme',
+        address: '',
+        isActive: true,
+      };
+
+  return {
+    props: {
+      auth: {
+        user: normalizedUser,
+      },
+      userProfile: normalizedUser,
+    } as unknown as T,
+  };
 }
 
 export function setLayoutProps(_props?: any) {
