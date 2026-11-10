@@ -16,19 +16,8 @@ import AppearancePage from './pages/settings/appearance';
 import SecurityPage from './pages/settings/security';
 import UploadProfilePage from './pages/upload/uploadProfile';
 import DocumentCreatePage from './pages/documents/create';
+import RideSearchPage from './pages/rides/search';
 
-function RideSearchPage() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-12 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
-      <div className="max-w-xl rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h1 className="text-3xl font-bold">Recherche de trajet</h1>
-        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-          Cette page de recherche est prête à être alimentée par votre moteur de recherche de trajets.
-        </p>
-      </div>
-    </div>
-  );
-}
 
 function App() {
   return (
