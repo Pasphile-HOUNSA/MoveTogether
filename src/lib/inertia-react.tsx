@@ -116,6 +116,8 @@ export function Form({
 }) {
   const [processing, setProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const formProps = { ...props };
+  delete formProps.resetOnSuccess;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -154,14 +156,14 @@ export function Form({
 
   if (typeof children === 'function') {
     return (
-      <form onSubmit={handleSubmit} {...props}>
+      <form onSubmit={handleSubmit} {...formProps}>
         {children({ processing, errors, data: {}, clearErrors, resetAndClearErrors })}
       </form>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} {...props}>
+    <form onSubmit={handleSubmit} {...formProps}>
       {children}
     </form>
   );

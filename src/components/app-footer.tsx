@@ -4,7 +4,6 @@ import {
     AtSign,
     BriefcaseBusiness,
     Code2,
-    Heart,
     Globe,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -104,7 +103,7 @@ export default function AppFooter() {
                             <ul className="mt-4 space-y-2.5 text-sm">
                                 <li>
                                     <Link
-                                        href="/trajets"
+                                        href="/rides/search"
                                         className="transition-colors hover:text-[#1D63ED]"
                                     >
                                         Rechercher un trajet
@@ -112,7 +111,7 @@ export default function AppFooter() {
                                 </li>
                                 <li>
                                     <Link
-                                        href="/proposer-trajet"
+                                        href="/rides/verify-before-publish"
                                         className="transition-colors hover:text-[#1D63ED]"
                                     >
                                         Proposer un trajet
@@ -120,7 +119,7 @@ export default function AppFooter() {
                                 </li>
                                 <li>
                                     <Link
-                                        href="/comment-ca-marche"
+                                        href="/#comment-ca-marche"
                                         className="transition-colors hover:text-[#1D63ED]"
                                     >
                                         Comment ça marche
@@ -128,10 +127,10 @@ export default function AppFooter() {
                                 </li>
                                 <li>
                                     <Link
-                                        href="/tarifs"
+                                        href="/#avantages"
                                         className="transition-colors hover:text-[#1D63ED]"
                                     >
-                                        Tarification
+                                        Économies & avantages
                                     </Link>
                                 </li>
                             </ul>
@@ -145,7 +144,7 @@ export default function AppFooter() {
                             <ul className="mt-4 space-y-2.5 text-sm">
                                 <li>
                                     <Link
-                                        href="/a-propos"
+                                        href="/#comment-ca-marche"
                                         className="transition-colors hover:text-[#1D63ED]"
                                     >
                                         Notre histoire
@@ -153,7 +152,7 @@ export default function AppFooter() {
                                 </li>
                                 <li>
                                     <Link
-                                        href="/securite"
+                                        href="/#avantages"
                                         className="transition-colors hover:text-[#1D63ED]"
                                     >
                                         Charte de sécurité
@@ -161,7 +160,7 @@ export default function AppFooter() {
                                 </li>
                                 <li>
                                     <Link
-                                        href="/avis"
+                                        href="/#avis"
                                         className="transition-colors hover:text-[#1D63ED]"
                                     >
                                         Avis membres
@@ -257,11 +256,6 @@ export default function AppFooter() {
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                         &copy; {currentYear} MoveTogether. Tous droits réservés.
                     </p>
-                    <div className="mt-4 flex items-center gap-1 text-xs text-slate-500 sm:mt-0 dark:text-slate-400">
-                        <span>Fait avec</span>
-                        <Heart className="h-3.5 w-3.5 fill-[#1D63ED] text-[#1D63ED]" />
-                        <span>pour une mobilité plus verte.</span>
-                    </div>
                 </div>
             </div>
         </footer>

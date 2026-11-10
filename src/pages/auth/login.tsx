@@ -7,9 +7,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { register } from '@/routes';
-import { store } from '@/routes/login';
-import { request } from '@/routes/password';
 import { Car } from 'lucide-react';
 
 type Props = {
@@ -55,7 +52,8 @@ export default function Login({ status, canResetPassword }: Props) {
                 {/* <PasskeyVerify /> */}
 
                 <Form
-                    {...store.form()}
+                    action="/login"
+                    method="post"
                     resetOnSuccess={['password']}
                     className="flex flex-col gap-6"
                 >
@@ -94,7 +92,7 @@ export default function Login({ status, canResetPassword }: Props) {
 
                                     {canResetPassword && (
                                         <TextLink
-                                            href={request()}
+                                            href="/forgot-password"
                                             className="ml-auto text-[#1D63ED] hover:underline text-sm"
                                             tabIndex={5}
                                         >
@@ -127,7 +125,7 @@ export default function Login({ status, canResetPassword }: Props) {
 
                             <div className="text-center text-sm text-muted-foreground">
                                 Vous n'avez pas de compte?{' '}
-                                <TextLink href={register()} tabIndex={5} className='text-[#1D63ED] font-semibold hover:underline'>
+                                <TextLink href="/register" tabIndex={5} className='text-[#1D63ED] font-semibold hover:underline'>
                                     Créer un compte
                                 </TextLink>
                             </div>

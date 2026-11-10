@@ -98,9 +98,6 @@ export default function Home() {
                     </svg>
 
                     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/80 dark:bg-blue-950/50 text-[#1D63ED] dark:text-blue-400 text-xs font-semibold tracking-wide">
-                            <Star className="w-3.5 h-3.5 fill-current" /> Le réseau de covoiturage de confiance
-                        </div>
 
                         <h1 className="text-4xl sm:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
                             Voyagez partout, <span className="text-[#1D63ED]">à moindre coût</span>
@@ -146,7 +143,7 @@ export default function Home() {
                 </section>
 
                 {/* 3. Section Statistiques */}
-                <section className="w-full border-y border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 py-10">
+                <section id="avis" className="w-full border-y border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 py-10">
                     <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 md:divide-x md:divide-slate-100 dark:md:divide-slate-800">
                         <Stat icon={Users} value="50K+" label="Utilisateurs actifs" />
                         <Stat icon={Route} value="120K+" label="Trajets réalisés" />
